@@ -32,13 +32,7 @@ checksums           rmd160  18e8c2584915068a9d7a69df9a64311337802d1a \
                     sha256  7c664249ff77e443d6ea0e4cf0e587eae918ca3c48d081d1915fe2a1f1bcc5cc \
                     size    18271736
 
-patchfiles          patch-setup.py.diff \
-                    patch-Lib-cgi.py.diff \
-                    patch-configure.diff \
-                    patch-Lib-ctypes-macholib-dyld.py.diff \
-                    patch-libedit.diff \
-                    patch-configure-xcode4bug.diff \
-                    patch-arm64.diff \
+patchfiles          patch-arm64.diff \
                     sysconfig.py.diff
 
 if {${os.platform} eq "darwin" && ${os.major} < 10} {
@@ -128,14 +122,6 @@ platform darwin {
         reinplace -E s|${lfs_pattern}|${lfs_replacement}| \
             ${buildlibdir}/_sysconfigdata__darwin_darwin.py
 
-        # remove -arch flags from the config
-        reinplace -E {s|-arch [a-z0-9_]+||g} \
-            ${buildlibdir}/_sysconfigdata__darwin_darwin.py
-
-        # also remove gettext overlinking
-        reinplace "s|-lintl||" \
-            ${buildlibdir}/_sysconfigdata__darwin_darwin.py
-
         file mtime ${buildlibdir}/_sysconfigdata__darwin_darwin.py $oldmtime
     }
 
@@ -151,12 +137,6 @@ platform darwin {
         # Also make the sysconfig changes in the Makefile
         reinplace {s|^\(LINKFORSHARED=\).*$|\1 -L$(LIBPL) -lpython$(VERSION)$(ABIFLAGS) $(LIBS) $(SYSLIBS)|} \
             ${destroot}${framewdir}/lib/python${branch}/${confdir}/Makefile
-
-        reinplace -E {s|-arch [a-z0-9_]+||g} \
-           ${destroot}${framewdir}/lib/python${branch}/${confdir}/Makefile
-
-        reinplace "s|-lintl||" \
-           ${destroot}${framewdir}/lib/python${branch}/${confdir}/Makefile
     }
 }
 
@@ -175,32 +155,12 @@ the 'python' or 'python3' commands), run one or both of:
 "
 
 variant universal {
-    post-patch {
-        set universal_arch_flags {}
-        set arch_run_32bit {}
-        foreach arch ${universal_archs} {
-            lappend universal_arch_flags -arch ${arch}
-            if {${arch} eq "i386" || ${arch} eq "ppc"} {
-                lappend arch_run_32bit -${arch}
-            }
-        }
-        reinplace \
-          "s|UNIVERSAL_ARCH_FLAGS=\".*\"|UNIVERSAL_ARCH_FLAGS=\"${universal_arch_flags}\"|" \
-          ${worksrcpath}/configure
-        if {${arch_run_32bit} ne ""} {
-            reinplace \
-              "s|ARCH_RUN_32BIT=\".*\"|ARCH_RUN_32BIT=\"arch ${arch_run_32bit}\"|" \
-              ${worksrcpath}/configure
-        }
-    }
     if {${configure.sdkroot} ne ""} {
         configure.args-append   --enable-universalsdk=${configure.sdkroot}
     } else {
         configure.args-append   --enable-universalsdk=/
     }
-    post-configure {
-        system -W ${worksrcpath} "ed - pyconfig.h < ${filespath}/pyconfig.h-universal.ed"
-    }
+    configure.args-append  --with-universal-archs=universal2
 
     post-destroot {
         foreach unversioned {python3-32} {
