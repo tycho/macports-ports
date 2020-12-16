@@ -39,8 +39,7 @@ depends_build               port:pkgconfig
 depends_lib                 port:expat \
                             port:freetype \
                             port:gettext \
-                            port:libiconv \
-                            port:ossp-uuid
+                            port:libiconv
 
 if {${os.platform} eq "darwin" && ${os.major} < 9} {
     set add_fonts           /usr/X11R6/lib/X11/fonts
