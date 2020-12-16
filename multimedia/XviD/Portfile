@@ -43,6 +43,7 @@ configure.universal_args-delete --disable-dependency-tracking
 
 set my_targets(ppc)     powerpc
 set my_targets(ppc64)   powerpc
+set my_targets(arm64)   aarch64
 set my_targets(i386)    i386
 set my_targets(x86_64)  x86_64
 
