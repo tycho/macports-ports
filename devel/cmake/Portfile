@@ -168,6 +168,10 @@ if {${subport} eq ${name}} {
     # CMake's configure script doesn't recognize `--host`.
     array set merger_host {i386 {} x86_64 {} ppc {} ppc64 {} arm64 {}}
 
+    foreach my_arch {i386 x86_64 ppc ppc64 arm64} {
+        lappend merger_configure_env(${my_arch}) CMAKE_OSX_ARCHITECTURES=${my_arch}
+    }
+
     platform darwin 8 {
         configure.ldflags-append -Wl,-framework -Wl,ApplicationServices
     }
