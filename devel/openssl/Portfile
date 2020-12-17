@@ -58,6 +58,7 @@ configure.args      -L${prefix}/lib \
                     --openssldir=${prefix}/etc/openssl \
                     shared \
                     zlib
+configure.cflags-replace -Os -O2
 
 # Use SDK if necessary.
 if {${configure.sdkroot} ne ""} {
