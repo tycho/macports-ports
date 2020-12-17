@@ -45,6 +45,8 @@ checksums           rmd160  b88dd6c2f1587a2cf9e5670f697343808dc80ea6 \
                     sha256  aaf2fcb575cdf6491b98ab4829abf78a3dec8402b8b81efc8f23c00d443981bf \
                     size    9823161
 
+patchfiles          patch-Apple-M1-features.diff
+
 if {${os.platform} eq "darwin" && ${os.major} < 11} {
     # Having the stdlib set to libc++ on 10.6 causes a dependency on a
     # macports-clang compiler to be added, which would be a dep cycle.

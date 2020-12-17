@@ -1,0 +1,34 @@
+diff --git crypto/armcap.c crypto/armcap.c
+index 58e54f0da2..c283a105ce 100644
+--- crypto/armcap.c
++++ crypto/armcap.c
+@@ -114,7 +114,20 @@ void OPENSSL_cpuid_setup(void)
+         return;
+     }
+
+-# if defined(__APPLE__) && !defined(__aarch64__)
++# if defined(__APPLE__)
++#  if defined(__aarch64__)
++    /*
++     * MacPorts assumption: we're building for Apple M1 or later, so enable all
++     * relevant features.
++     */
++    OPENSSL_armcap_P = ARMV7_NEON | \
++                       ARMV8_AES | \
++                       ARMV8_PMULL | \
++                       ARMV8_SHA1 | \
++                       ARMV8_SHA256 | \
++                       ARMV8_SHA512;
++    return;
++#  else
+     /*
+      * Capability probing by catching SIGILL appears to be problematic
+      * on iOS. But since Apple universe is "monocultural", it's actually
+@@ -130,6 +143,7 @@ void OPENSSL_cpuid_setup(void)
+      * Unified code works because it never triggers SIGILL on Apple
+      * devices...
+      */
++#  endif
+ # endif
+
+     OPENSSL_armcap_P = 0;
