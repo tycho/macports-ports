@@ -30,7 +30,7 @@ depends_lib         port:ncurses \
 
 # MacVim does not build for arch i386
 # https://trac.macports.org/ticket/54666
-supported_archs     x86_64
+supported_archs     x86_64 arm64
 
 patchfiles          patch-remove-sparkle.diff \
                     patch-remove-Homebrew-python.diff \
@@ -70,6 +70,7 @@ configure.args      --enable-gui=macvim \
                     --without-x \
                     --without-local-dir \
                     --disable-gpm \
+                    --disable-sparkle \
                     --with-tlib=ncurses \
                     --enable-multibyte \
                     --enable-fail-if-missing \
