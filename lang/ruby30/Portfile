@@ -46,6 +46,8 @@ depends_skip_archcheck pkgconfig
 select.group        ruby
 select.file         ${filespath}/ruby30
 
+patchfiles          patch-bigdecimal.diff
+
 configure.args      --enable-shared \
                     --enable-install-static-library \
                     --disable-install-doc \
@@ -120,6 +122,16 @@ variant jemalloc description "use jemalloc" {
 variant relative description "Enable relative loading of libraries to allow for relocation of binaries." {
         #enable relative loading
         configure.args-append  --enable-load-relative
+}
+
+variant universal {
+        # use ruby built-in universal mechanism.
+        configure.args-append   --with-arch=[join ${universal_archs} ,]
+        # clear macports' universal flags
+        configure.universal_cflags
+        configure.universal_cppflags
+        configure.universal_cxxflags
+        configure.universal_ldflags
 }
 
 # legacy systems suport
