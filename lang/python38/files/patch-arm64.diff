@@ -1,11 +1,11 @@
 diff --git Doc/library/ctypes.rst Doc/library/ctypes.rst
-index 2d6c6d0a1c..8a82dd51fa 100644
+index bf32d3e549..ebb733e85c 100644
 --- Doc/library/ctypes.rst
 +++ Doc/library/ctypes.rst
-@@ -1579,6 +1579,13 @@ They are instances of a private class:
+@@ -1594,6 +1594,13 @@ They are instances of a private class:
        value usable as argument (integer, string, ctypes instance).  This allows
        defining adapters that can adapt custom objects as function parameters.
-
+ 
 +   .. attribute:: variadic
 +
 +      Assign a boolean to specify that the function takes a variable number of
@@ -14,21 +14,16 @@ index 2d6c6d0a1c..8a82dd51fa 100644
 +      normal functions.
 +
     .. attribute:: errcheck
-
+ 
        Assign a Python function or another callable to this attribute. The
-@@ -2545,4 +2552,3 @@ Arrays and pointers
-
-         Returns the object to which to pointer points.  Assigning to this
-         attribute changes the pointer to point to the assigned object.
--
 diff --git Lib/_osx_support.py Lib/_osx_support.py
 index e9efce7d7e..0cbfeed0c4 100644
 --- Lib/_osx_support.py
 +++ Lib/_osx_support.py
 @@ -110,6 +110,26 @@ def _get_system_version():
-
+ 
      return _SYSTEM_VERSION
-
+ 
 +_SYSTEM_VERSION_TUPLE = None
 +def _get_system_version_tuple():
 +    """
@@ -55,7 +50,7 @@ index e9efce7d7e..0cbfeed0c4 100644
 @@ -132,14 +152,18 @@ def _supports_universal_builds():
      # builds, in particular -isysroot and -arch arguments to the compiler. This
      # is in support of allowing 10.4 universal builds to run on 10.3.x systems.
-
+ 
 -    osx_version = _get_system_version()
 -    if osx_version:
 -        try:
@@ -64,7 +59,7 @@ index e9efce7d7e..0cbfeed0c4 100644
 -            osx_version = ''
 +    osx_version = _get_system_version_tuple()
      return bool(osx_version >= (10, 4)) if osx_version else False
-
+ 
 +def _supports_arm64_builds():
 +    """Returns True if arm64 builds are supported on this system"""
 +    # There are two sets of systems supporting macOS/arm64 builds:
@@ -74,13 +69,13 @@ index e9efce7d7e..0cbfeed0c4 100644
 +    osx_version = _get_system_version_tuple()
 +    return osx_version >= (11, 0) if osx_version else False
 +
-
+ 
  def _find_appropriate_compiler(_config_vars):
      """Find appropriate C compiler for extension module builds"""
 @@ -331,6 +355,12 @@ def compiler_fixup(compiler_so, cc_args):
              except ValueError:
                  break
-
+ 
 +    elif not _supports_arm64_builds():
 +        # Look for "-arch arm64" and drop that
 +        for idx in reversed(range(len(compiler_so))):
@@ -91,7 +86,7 @@ index e9efce7d7e..0cbfeed0c4 100644
          # User specified different -arch flags in the environ,
          # see also distutils.sysconfig
 @@ -481,6 +511,8 @@ def get_platform_osx(_config_vars, osname, release, machine):
-
+ 
              if len(archs) == 1:
                  machine = archs[0]
 +            elif archs == ('arm64', 'x86_64'):
@@ -117,15 +112,15 @@ index 77ab703cc0..1c8d451385 100755
 +#! @@PREFIX@@/bin/python3.8
 +
 +# NOTE: /usr/local/bin/python patched for MacPorts installation
-
+ 
  """Support module for CGI (Common Gateway Interface) scripts.
-
+ 
 diff --git Lib/ctypes/macholib/dyld.py Lib/ctypes/macholib/dyld.py
 index 9d86b05876..7a707af9d9 100644
 --- Lib/ctypes/macholib/dyld.py
 +++ Lib/ctypes/macholib/dyld.py
 @@ -23,7 +23,7 @@ DEFAULT_FRAMEWORK_FALLBACK = [
-
+ 
  DEFAULT_LIBRARY_FALLBACK = [
      os.path.expanduser("~/lib"),
 -    "/usr/local/lib",
@@ -152,11 +147,11 @@ index bbd45c7529..35e97863c0 100644
 +++ Lib/test/test_bytes.py
 @@ -963,6 +963,7 @@ class BytesTest(BaseBytesTest, unittest.TestCase):
              c_char_p)
-
+ 
          PyBytes_FromFormat = pythonapi.PyBytes_FromFormat
 +        PyBytes_FromFormat.argtypes = (c_char_p,)
          PyBytes_FromFormat.restype = py_object
-
+ 
          # basic tests
 diff --git Lib/test/test_unicode.py Lib/test/test_unicode.py
 index 1d6aabdbbc..d97180d298 100644
@@ -174,16 +169,16 @@ index 1d6aabdbbc..d97180d298 100644
          _PyUnicode_FromFormat = getattr(pythonapi, name)
 +        _PyUnicode_FromFormat.argtypes = (c_char_p,)
          _PyUnicode_FromFormat.restype = py_object
-
+ 
          def PyUnicode_FromFormat(format, *args):
 diff --git Mac/BuildScript/build-installer.py Mac/BuildScript/build-installer.py
-index a58b922ce3..97050f66a7 100755
+index 2548b212d9..d05f184fbe 100755
 --- Mac/BuildScript/build-installer.py
 +++ Mac/BuildScript/build-installer.py
 @@ -116,7 +116,8 @@ WORKDIR = "/tmp/_py"
  DEPSRC = os.path.join(WORKDIR, 'third-party')
  DEPSRC = os.path.expanduser('~/Universal/other-sources')
-
+ 
 -universal_opts_map = { '32-bit': ('i386', 'ppc',),
 +universal_opts_map = { 'universal2': ('arm64', 'x86_64'),
 +                       '32-bit': ('i386', 'ppc',),
@@ -205,18 +200,18 @@ index ec7d873df2..8bc8fdec2f 100644
 @@ -120,6 +120,8 @@ support ppc (Xcode 4 on 10.6 and later systems).  The flavor can be specified
  using the configure option ``--with-universal-archs=VALUE``. The following
  values are available:
-
+ 
 +  * ``universal2``: ``arm64``, ``x86_64``
 +
    * ``intel``:	  ``i386``, ``x86_64``
-
+ 
    * ``intel-32``: ``i386``
 diff --git Mac/Tools/pythonw.c Mac/Tools/pythonw.c
 index c8bd3ba8d6..ae4c262129 100644
 --- Mac/Tools/pythonw.c
 +++ Mac/Tools/pythonw.c
 @@ -119,10 +119,16 @@ setup_spawnattr(posix_spawnattr_t* spawnattr)
-
+ 
  #elif defined(__ppc__)
      cpu_types[0] = CPU_TYPE_POWERPC;
 +
@@ -230,7 +225,7 @@ index c8bd3ba8d6..ae4c262129 100644
  #       error "Unknown CPU"
 +
  #endif
-
+ 
      if (posix_spawnattr_setbinpref_np(spawnattr, count,
 diff --git Modules/_ctypes/_ctypes.c Modules/_ctypes/_ctypes.c
 index b10b86725f..65d0374cf4 100644
@@ -239,7 +234,7 @@ index b10b86725f..65d0374cf4 100644
 @@ -3320,6 +3320,35 @@ PyCFuncPtr_get_restype(PyCFuncPtrObject *self, void *Py_UNUSED(ignored))
      }
  }
-
+ 
 +static int
 +PyCFuncPtr_set_variadic(PyCFuncPtrObject *self, PyObject *ob, void *Py_UNUSED(ignored))
 +{
@@ -280,14 +275,14 @@ index b10b86725f..65d0374cf4 100644
 +      "specify if function takes variable number of arguments", NULL },
      { NULL, NULL }
  };
-
+ 
 @@ -5833,6 +5864,7 @@ PyInit__ctypes(void)
      PyModule_AddObject(m, "FUNCFLAG_USE_ERRNO", PyLong_FromLong(FUNCFLAG_USE_ERRNO));
      PyModule_AddObject(m, "FUNCFLAG_USE_LASTERROR", PyLong_FromLong(FUNCFLAG_USE_LASTERROR));
      PyModule_AddObject(m, "FUNCFLAG_PYTHONAPI", PyLong_FromLong(FUNCFLAG_PYTHONAPI));
 +    PyModule_AddObject(m, "FUNCFLAG_VARIADIC", PyLong_FromLong(FUNCFLAG_VARIADIC));
      PyModule_AddStringConstant(m, "__version__", "1.1.0");
-
+ 
      PyModule_AddObject(m, "_memmove_addr", PyLong_FromVoidPtr(memmove));
 diff --git Modules/_ctypes/ctypes.h Modules/_ctypes/ctypes.h
 index e58f85233c..e45975f6ad 100644
@@ -298,7 +293,7 @@ index e58f85233c..e45975f6ad 100644
  #define FUNCFLAG_USE_ERRNO 0x8
  #define FUNCFLAG_USE_LASTERROR 0x10
 +#define FUNCFLAG_VARIADIC 0x20
-
+ 
  #define TYPEFLAG_ISPOINTER 0x100
  #define TYPEFLAG_HASPOINTER 0x200
 diff --git Modules/getpath.c Modules/getpath.c
@@ -306,7 +301,7 @@ index b727f66953..63815c5fed 100644
 --- Modules/getpath.c
 +++ Modules/getpath.c
 @@ -777,11 +777,7 @@ calculate_program_full_path(PyCalculatePath *calculate, _PyPathConfig *pathconfi
-
+ 
  #ifdef __APPLE__
      char execpath[MAXPATHLEN + 1];
 -#if MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_4
@@ -315,30 +310,16 @@ index b727f66953..63815c5fed 100644
 -    unsigned long nsexeclength = Py_ARRAY_LENGTH(execpath) - 1;
 -#endif
  #endif
-
+ 
      /* If there is no slash in the argv0 path, then we have to
-diff --git Modules/readline.c Modules/readline.c
-index 081657fb23..bc4e53cf18 100644
---- Modules/readline.c
-+++ Modules/readline.c
-@@ -28,8 +28,7 @@
-
- /* GNU readline definitions */
- #undef HAVE_CONFIG_H /* Else readline/chardefs.h includes strings.h */
--#include <readline/readline.h>
--#include <readline/history.h>
-+#include <editline/readline.h>
-
- #ifdef HAVE_RL_COMPLETION_MATCHES
- #define completion_matches(x, y) \
 diff --git Python/bootstrap_hash.c Python/bootstrap_hash.c
-index eb2b6d08d8..d8803a9401 100644
+index eb2b6d08d8..d13f2cd9b1 100644
 --- Python/bootstrap_hash.c
 +++ Python/bootstrap_hash.c
 @@ -25,6 +25,16 @@
  #  include <sanitizer/msan_interface.h>
  #endif
-
+ 
 +#if defined(__APPLE__) && defined(__has_builtin)
 +#  if __has_builtin(__builtin_available)
 +#    define HAVE_GETENTRYPY_GETRANDOM_RUNTIME __builtin_available(macOS 10.12, iOS 10.10, tvOS 10.0, watchOS 3.0, *)
@@ -354,7 +335,7 @@ index eb2b6d08d8..d8803a9401 100644
  #else
 @@ -208,6 +218,16 @@ py_getrandom(void *buffer, Py_ssize_t size, int blocking, int raise)
       error.
-
+ 
     getentropy() is retried if it failed with EINTR: interrupted by a signal. */
 +
 +#if defined(__APPLE__) && defined(__has_attribute) && __has_attribute(availability)
@@ -371,7 +352,7 @@ index eb2b6d08d8..d8803a9401 100644
  {
 @@ -498,19 +518,21 @@ pyurandom(void *buffer, Py_ssize_t size, int blocking, int raise)
  #else
-
+ 
  #if defined(PY_GETRANDOM) || defined(PY_GETENTROPY)
 +    if (HAVE_GETENTRYPY_GETRANDOM_RUNTIME) {
  #ifdef PY_GETRANDOM
@@ -399,14 +380,14 @@ index eb2b6d08d8..d8803a9401 100644
 +           ENOSYS or EPERM. Fall back on reading from /dev/urandom. */
 +        } /* end of availability block */
  #endif
-
+ 
      return dev_urandom(buffer, size, raise);
 diff --git Python/pytime.c Python/pytime.c
-index 109d52692c..8f4b7b7af0 100644
+index 109d52692c..61f5a1116a 100644
 --- Python/pytime.c
 +++ Python/pytime.c
 @@ -5,6 +5,12 @@
-
+ 
  #if defined(__APPLE__)
  #include <mach/mach_time.h>   /* mach_absolute_time(), mach_timebase_info() */
 +
@@ -416,10 +397,10 @@ index 109d52692c..8f4b7b7af0 100644
 +#  endif
 +#endif
  #endif
-
+ 
  #define _PyTime_check_mul_overflow(a, b) \
 @@ -683,15 +689,22 @@ pygettimeofday(_PyTime_t *tp, _Py_clock_info_t *info, int raise)
-
+ 
  #else   /* MS_WINDOWS */
      int err;
 -#ifdef HAVE_CLOCK_GETTIME
@@ -431,9 +412,9 @@ index 109d52692c..8f4b7b7af0 100644
 +#if !defined(HAVE_CLOCK_GETTIME) || defined(__APPLE__)
      struct timeval tv;
  #endif
-
+ 
      assert(info == NULL || raise);
-
+ 
  #ifdef HAVE_CLOCK_GETTIME
 +
 +#ifdef HAVE_CLOCK_GETTIME_RUNTIME
@@ -456,7 +437,7 @@ index 109d52692c..8f4b7b7af0 100644
 +#endif
 +
 +#if !defined(HAVE_CLOCK_GETTIME) || defined(HAVE_CLOCK_GETTIME_RUNTIME)
-
+ 
       /* test gettimeofday() */
  #ifdef GETTIMEOFDAY_NO_TZ
 @@ -739,6 +759,11 @@ pygettimeofday(_PyTime_t *tp, _Py_clock_info_t *info, int raise)
@@ -478,15 +459,15 @@ index f98db73656..a7789d0ef5 100644
 @@ -1,6 +1,6 @@
 -# generated automatically by aclocal 1.15 -*- Autoconf -*-
 +# generated automatically by aclocal 1.16.3 -*- Autoconf -*-
-
+ 
 -# Copyright (C) 1996-2014 Free Software Foundation, Inc.
 +# Copyright (C) 1996-2020 Free Software Foundation, Inc.
-
+ 
  # This file is free software; the Free Software Foundation
  # gives unlimited permission to copy and/or distribute it,
 @@ -12,9 +12,9 @@
  # PARTICULAR PURPOSE.
-
+ 
  m4_ifndef([AC_CONFIG_MACRO_DIRS], [m4_defun([_AM_CONFIG_MACRO_DIRS], [])m4_defun([AC_CONFIG_MACRO_DIRS], [_AM_CONFIG_MACRO_DIRS($@)])])
 -dnl pkg.m4 - Macros to locate and utilise pkg-config.   -*- Autoconf -*-
 -dnl serial 11 (pkg-config-0.29.1)
@@ -508,38 +489,38 @@ index f98db73656..a7789d0ef5 100644
  ])dnl PKG_PREREQ
 @@ -156,7 +156,7 @@ AC_ARG_VAR([$1][_CFLAGS], [C compiler flags for $1, overriding pkg-config])dnl
  AC_ARG_VAR([$1][_LIBS], [linker flags for $1, overriding pkg-config])dnl
-
+ 
  pkg_failed=no
 -AC_MSG_CHECKING([for $1])
 +AC_MSG_CHECKING([for $2])
-
+ 
  _PKG_CONFIG([$1][_CFLAGS], [cflags], [$2])
  _PKG_CONFIG([$1][_LIBS], [libs], [$2])
 @@ -166,11 +166,11 @@ and $1[]_LIBS to avoid the need to call pkg-config.
  See the pkg-config man page for more details.])
-
+ 
  if test $pkg_failed = yes; then
 -   	AC_MSG_RESULT([no])
 +        AC_MSG_RESULT([no])
          _PKG_SHORT_ERRORS_SUPPORTED
          if test $_pkg_short_errors_supported = yes; then
-	        $1[]_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "$2" 2>&1`
--        else
+ 	        $1[]_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "$2" 2>&1`
+-        else 
 +        else
-	        $1[]_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "$2" 2>&1`
+ 	        $1[]_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "$2" 2>&1`
          fi
-	# Put the nasty error message in config.log where it belongs
+ 	# Put the nasty error message in config.log where it belongs
 @@ -187,7 +187,7 @@ installed software in a non-standard prefix.
  _PKG_TEXT])[]dnl
          ])
  elif test $pkg_failed = untried; then
 -     	AC_MSG_RESULT([no])
 +        AC_MSG_RESULT([no])
-	m4_default([$4], [AC_MSG_FAILURE(
+ 	m4_default([$4], [AC_MSG_FAILURE(
  [The pkg-config script could not be found or is too old.  Make sure it
  is in your PATH or set the PKG_CONFIG environment variable to the full
 diff --git configure configure
-index 96dcd0dcd5..c7961cc41e 100755
+index c164d68c4e..0712257c68 100755
 --- configure
 +++ configure
 @@ -782,7 +782,6 @@ infodir
@@ -561,7 +542,7 @@ index 96dcd0dcd5..c7961cc41e 100755
 @@ -1150,15 +1148,6 @@ do
    | -silent | --silent | --silen | --sile | --sil)
      silent=yes ;;
-
+ 
 -  -runstatedir | --runstatedir | --runstatedi | --runstated \
 -  | --runstate | --runstat | --runsta | --runst | --runs \
 -  | --run | --ru | --r)
@@ -576,8 +557,8 @@ index 96dcd0dcd5..c7961cc41e 100755
    -sbindir=* | --sbindir=* | --sbindi=* | --sbind=* | --sbin=* \
 @@ -1296,7 +1285,7 @@ fi
  for ac_var in	exec_prefix prefix bindir sbindir libexecdir datarootdir \
-		datadir sysconfdir sharedstatedir localstatedir includedir \
-		oldincludedir docdir infodir htmldir dvidir pdfdir psdir \
+ 		datadir sysconfdir sharedstatedir localstatedir includedir \
+ 		oldincludedir docdir infodir htmldir dvidir pdfdir psdir \
 -		libdir localedir mandir runstatedir
 +		libdir localedir mandir
  do
@@ -605,14 +586,14 @@ index 96dcd0dcd5..c7961cc41e 100755
                            specify an alternate name of the framework built
                            with --enable-framework
 @@ -3196,6 +3184,8 @@ if test "${enable_framework+set}" = set; then :
-			;;
-		esac
-
+ 			;;
+ 		esac
+ 
 +		FRAMEWORKINSTALLAPPSPREFIX="@@APPLICATIONS_DIR@@"
 +
-		prefix=$PYTHONFRAMEWORKINSTALLDIR/Versions/$VERSION
-
-		# Add files for Mac specific code to the list of output
+ 		prefix=$PYTHONFRAMEWORKINSTALLDIR/Versions/$VERSION
+ 
+ 		# Add files for Mac specific code to the list of output
 @@ -7388,6 +7378,11 @@ $as_echo "$CC" >&6; }
          if test "${enable_universalsdk}"
          then
@@ -633,69 +614,23 @@ index 96dcd0dcd5..c7961cc41e 100755
 +               as_fn_error $? "proper usage is --with-universal-arch=universal2|32-bit|64-bit|all|intel|3-way" "$LINENO" 5
                 ;;
              esac
-
-@@ -7493,6 +7488,31 @@ $as_echo_n "checking which MACOSX_DEPLOYMENT_TARGET to use... " >&6; }
-         { $as_echo "$as_me:${as_lineno-$LINENO}: result: $MACOSX_DEPLOYMENT_TARGET" >&5
- $as_echo "$MACOSX_DEPLOYMENT_TARGET" >&6; }
-
-+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking if specified universal architectures work" >&5
-+$as_echo_n "checking if specified universal architectures work... " >&6; }
-+        cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-+/* end confdefs.h.  */
-+#include <stdio.h>
-+int
-+main ()
-+{
-+printf("%d", 42);
-+  ;
-+  return 0;
-+}
-+_ACEOF
-+if ac_fn_c_try_link "$LINENO"; then :
-+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-+$as_echo "yes" >&6; }
-+else
-+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-+$as_echo "no" >&6; }
-+             as_fn_error $? "check config.log and use the '--with-universal-archs' option" "$LINENO" 5
-+
-+fi
-+rm -f core conftest.err conftest.$ac_objext \
-+    conftest$ac_exeext conftest.$ac_ext
-+
-         # end of Darwin* tests
-         ;;
-     esac
-@@ -9253,19 +9273,22 @@ fi
-		MACOSX_DEFAULT_ARCH="ppc"
-		;;
-	*)
--    		as_fn_error $? "Unexpected output of 'arch' on OSX" "$LINENO" 5
-+    		as_fn_error $? "Unexpected output of 'arch' on macOS" "$LINENO" 5
-		;;
-	esac
+ 
+@@ -9283,7 +9278,10 @@ fi
+     	esac
      else
-	case `/usr/bin/arch` in
+     	case `/usr/bin/arch` in
 -    	i386)
++        arm64)
++            MACOSX_DEFAULT_ARCH="arm64"
++            ;;
 +        i386|x86_64)
-		MACOSX_DEFAULT_ARCH="x86_64"
-		;;
-	ppc)
-		MACOSX_DEFAULT_ARCH="ppc64"
-		;;
-+		arm64)
-+			MACOSX_DEFAULT_ARCH="arm64"
-+			;;
-	*)
--    		as_fn_error $? "Unexpected output of 'arch' on OSX" "$LINENO" 5
-+    		as_fn_error $? "Unexpected output of 'arch' on macOS" "$LINENO" 5
-		;;
-	esac
-
-@@ -11822,6 +11845,31 @@ else
+     		MACOSX_DEFAULT_ARCH="x86_64"
+     		;;
+     	ppc)
+@@ -11847,6 +11845,31 @@ else
    { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
  $as_echo "no" >&6; }
-
+ 
 +fi
 +rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
 +{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for _dyld_shared_cache_contains_path" >&5
@@ -723,9 +658,17 @@ index 96dcd0dcd5..c7961cc41e 100755
 +
  fi
  rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-
+ 
+@@ -15215,6 +15238,7 @@ _ACEOF
+ 
+ fi
+ 
++
+ EXT_SUFFIX=.${SOABI}${SHLIB_SUFFIX}
+ 
+ { $as_echo "$as_me:${as_lineno-$LINENO}: checking LDVERSION" >&5
 diff --git configure.ac configure.ac
-index 18a044629a..aad83322b0 100644
+index fc082a3cd2..c921a750f9 100644
 --- configure.ac
 +++ configure.ac
 @@ -212,7 +212,7 @@ fi
@@ -735,17 +678,17 @@ index 18a044629a..aad83322b0 100644
 -    AS_HELP_STRING([--with-universal-archs=ARCH], [select architectures for universal build ("32-bit", "64-bit", "3-way", "intel", "intel-32", "intel-64", or "all")]),
 +    AS_HELP_STRING([--with-universal-archs=ARCH], [select architectures for universal build ("universal2", "32-bit", "64-bit", "3-way", "intel", "intel-32", "intel-64", or "all")]),
  [
-	UNIVERSAL_ARCHS="$withval"
+ 	UNIVERSAL_ARCHS="$withval"
  ],
 @@ -313,6 +313,8 @@ AC_ARG_ENABLE(framework,
-			;;
-		esac
-
+ 			;;
+ 		esac
+ 
 +		FRAMEWORKINSTALLAPPSPREFIX="@@APPLICATIONS_DIR@@"
 +
-		prefix=$PYTHONFRAMEWORKINSTALLDIR/Versions/$VERSION
-
-		# Add files for Mac specific code to the list of output
+ 		prefix=$PYTHONFRAMEWORKINSTALLDIR/Versions/$VERSION
+ 
+ 		# Add files for Mac specific code to the list of output
 @@ -1828,6 +1830,11 @@ yes)
          if test "${enable_universalsdk}"
          then
@@ -766,48 +709,20 @@ index 18a044629a..aad83322b0 100644
 +               AC_MSG_ERROR([proper usage is --with-universal-arch=universal2|32-bit|64-bit|all|intel|3-way])
                 ;;
              esac
-
-@@ -1931,6 +1938,13 @@ yes)
-         EXPORT_MACOSX_DEPLOYMENT_TARGET=''
-         AC_MSG_RESULT($MACOSX_DEPLOYMENT_TARGET)
-
-+        AC_MSG_CHECKING(if specified universal architectures work)
-+        AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <stdio.h>]], [[printf("%d", 42);]])],
-+            [AC_MSG_RESULT(yes)],
-+            [AC_MSG_RESULT(no)
-+             AC_MSG_ERROR(check config.log and use the '--with-universal-archs' option)
-+        ])
-+
-         # end of Darwin* tests
-         ;;
-     esac
-@@ -2431,19 +2445,22 @@ case $ac_sys_system/$ac_sys_release in
-		MACOSX_DEFAULT_ARCH="ppc"
-		;;
-	*)
--    		AC_MSG_ERROR([Unexpected output of 'arch' on OSX])
-+    		AC_MSG_ERROR([Unexpected output of 'arch' on macOS])
-		;;
+ 
+@@ -2443,7 +2450,10 @@ case $ac_sys_system/$ac_sys_release in
      	esac
      else
      	case `/usr/bin/arch` in
 -    	i386)
++        arm64)
++            MACOSX_DEFAULT_ARCH="arm64"
++            ;;
 +        i386|x86_64)
      		MACOSX_DEFAULT_ARCH="x86_64"
      		;;
-	ppc)
-		MACOSX_DEFAULT_ARCH="ppc64"
-		;;
-+		arm64)
-+			MACOSX_DEFAULT_ARCH="arm64"
-+			;;
-	*)
--    		AC_MSG_ERROR([Unexpected output of 'arch' on OSX])
-+    		AC_MSG_ERROR([Unexpected output of 'arch' on macOS])
-		;;
-	esac
-
-@@ -3666,6 +3683,12 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+     	ppc)
+@@ -3673,6 +3683,12 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
     AC_MSG_RESULT(yes)],
    [AC_MSG_RESULT(no)
  ])
@@ -817,7 +732,7 @@ index 18a044629a..aad83322b0 100644
 +   AC_MSG_RESULT(yes)],
 +  [AC_MSG_RESULT(no)
 +])
-
+ 
  AC_MSG_CHECKING(for memfd_create)
  AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 diff --git pyconfig.h.in pyconfig.h.in
@@ -827,13 +742,13 @@ index 4263a712c3..75cd6905a0 100644
 @@ -281,6 +281,9 @@
  /* Define to 1 if you have the `dup3' function. */
  #undef HAVE_DUP3
-
+ 
 +/* Define if you have the '_dyld_shared_cache_contains_path' function. */
 +#undef HAVE_DYLD_SHARED_CACHE_CONTAINS_PATH
 +
  /* Defined when any dynamic module loading is enabled. */
  #undef HAVE_DYNAMIC_LOADING
-
+ 
 diff --git setup.py setup.py
 index 6340669fff..38d36b177a 100644
 --- setup.py
@@ -841,11 +756,11 @@ index 6340669fff..38d36b177a 100644
 @@ -126,7 +126,9 @@ def sysroot_paths(make_vars, subdirs):
                  break
      return dirs
-
+ 
 +
  MACOS_SDK_ROOT = None
 +MACOS_SDK_SPECIFIED = None
-
+ 
  def macosx_sdk_root():
      """Return the directory of the current macOS SDK.
 @@ -138,8 +140,9 @@ def macosx_sdk_root():
@@ -856,7 +771,7 @@ index 6340669fff..38d36b177a 100644
      """
 -    global MACOS_SDK_ROOT
 +    global MACOS_SDK_ROOT, MACOS_SDK_SPECIFIED
-
+ 
      # If already called, return cached result.
      if MACOS_SDK_ROOT:
 @@ -149,8 +152,10 @@ def macosx_sdk_root():
@@ -872,8 +787,8 @@ index 6340669fff..38d36b177a 100644
          try:
 @@ -179,6 +184,35 @@ def macosx_sdk_root():
      return MACOS_SDK_ROOT
-
-
+ 
+ 
 +def macosx_sdk_specified():
 +    """Returns true if an SDK was explicitly configured.
 +
@@ -908,8 +823,8 @@ index 6340669fff..38d36b177a 100644
      Returns True if 'path' can be located in an OSX SDK
 @@ -188,6 +222,13 @@ def is_macosx_sdk_path(path):
                  or path.startswith('/Library/') )
-
-
+ 
+ 
 +def grep_headers_for(function, headers):
 +    for header in headers:
 +        with open(header, 'r') as f:
@@ -922,7 +837,7 @@ index 6340669fff..38d36b177a 100644
      and returns a possibly-empty list of additional directories, or None
 @@ -1752,31 +1793,73 @@ class PyBuildExt(build_ext):
          return True
-
+ 
      def detect_tkinter_darwin(self):
 -        # The _tkinter module, using frameworks. Since frameworks are quite
 -        # different the UNIX search logic is not sharable.
@@ -970,7 +885,7 @@ index 6340669fff..38d36b177a 100644
 -            '/System/Library/Frameworks/',
 -            join(os.getenv('HOME'), '/Library/Frameworks')
 -        ]
-
+ 
 -        sysroot = macosx_sdk_root()
 +        sysroot = macosx_sdk_root() # path to the SDK or '/'
 +
@@ -991,7 +906,7 @@ index 6340669fff..38d36b177a 100644
 +                join('/', 'Library', 'Frameworks'),
 +                join(sysroot, 'System', 'Library', 'Frameworks'),
 +            ]
-
+ 
 -        # Find the directory that contains the Tcl.framework and Tk.framework
 -        # bundles.
 -        # XXX distutils should support -F!
@@ -1016,7 +931,7 @@ index 6340669fff..38d36b177a 100644
 @@ -1786,24 +1869,16 @@ class PyBuildExt(build_ext):
              # will now resume.
              return False
-
+ 
 -        # For 8.4a2, we must add -I options that point inside the Tcl and Tk
 -        # frameworks. In later release we should hopefully be able to pass
 -        # the -F option to gcc, which specifies a framework lookup path.
@@ -1027,7 +942,7 @@ index 6340669fff..38d36b177a 100644
 -            for H in ('Headers', 'Versions/Current/PrivateHeaders')
 +            for H in ('Headers',)
          ]
-
+ 
 -        # For 8.4a2, the X11 headers are not included. Rather than include a
 -        # complicated search, this is a hard-coded path. It could bail out
 -        # if X11 libs are not found...
@@ -1035,17 +950,17 @@ index 6340669fff..38d36b177a 100644
 -        frameworks = ['-framework', 'Tcl', '-framework', 'Tk']
 +        # Add the base framework directory as well
 +        compile_args = ['-F', F]
-
+ 
 -        # All existing framework builds of Tcl/Tk don't support 64-bit
 -        # architectures.
 +        # Do not build tkinter for archs that this Tk was not built with.
          cflags = sysconfig.get_config_vars('CFLAGS')[0]
          archs = re.findall(r'-arch\s+(\w+)', cflags)
-
+ 
 @@ -1811,13 +1886,9 @@ class PyBuildExt(build_ext):
          if not os.path.exists(self.build_temp):
              os.makedirs(self.build_temp)
-
+ 
 -        # Note: cannot use os.popen or subprocess here, that
 -        # requires extensions that are not available here.
 -        if is_macosx_sdk_path(F):
@@ -1062,7 +977,7 @@ index 6340669fff..38d36b177a 100644
 @@ -1826,16 +1897,26 @@ class PyBuildExt(build_ext):
                      detected_archs.append(ln.split()[-1])
          os.unlink(tmpfile)
-
+ 
 +        arch_args = []
          for a in detected_archs:
 -            frameworks.append('-arch')
@@ -1078,7 +993,7 @@ index 6340669fff..38d36b177a 100644
 +        # that, suppress the warnings here instead.
 +        if '-Wstrict-prototypes' in cflags.split():
 +            compile_args.append('-Wno-strict-prototypes')
-
+ 
          self.add(Extension('_tkinter', ['_tkinter.c', 'tkappinit.c'],
                             define_macros=[('WITH_APPINIT', 1)],
                             include_dirs=include_dirs,
@@ -1088,10 +1003,10 @@ index 6340669fff..38d36b177a 100644
 +                           extra_compile_args=compile_args,
 +                           extra_link_args=link_args))
          return True
-
+ 
      def detect_tkinter(self):
 @@ -1992,7 +2073,12 @@ class PyBuildExt(build_ext):
-
+ 
      def detect_ctypes(self):
          # Thomas Heller's _ctypes module
 -        self.use_system_libffi = False
@@ -1107,7 +1022,7 @@ index 6340669fff..38d36b177a 100644
 @@ -2039,31 +2125,47 @@ class PyBuildExt(build_ext):
                                 sources=['_ctypes/_ctypes_test.c'],
                                 libraries=['m']))
-
+ 
 +        ffi_inc = sysconfig.get_config_var("LIBFFI_INCLUDEDIR")
 +        ffi_lib = None
 +
@@ -1150,7 +1065,7 @@ index 6340669fff..38d36b177a 100644
                  if (self.compiler.find_library_file(self.lib_dirs, lib_name)):
                      ffi_lib = lib_name
                      break
-
+ 
          if ffi_inc and ffi_lib:
 -            ext.include_dirs.extend(ffi_inc)
 +            ffi_headers = glob(os.path.join(ffi_inc, '*.h'))
@@ -1164,3 +1079,4 @@ index 6340669fff..38d36b177a 100644
 +            ext.include_dirs.append(ffi_inc)
              ext.libraries.append(ffi_lib)
              self.use_system_libffi = True
+ 
