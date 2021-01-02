@@ -51,7 +51,25 @@ if {${universal_possible} && [variant_isset universal]} {
 test.run        yes
 test.target     check
 
+set merger_dont_diff     ${prefix}/bin/gpg-error-config
+lappend merger_dont_diff ${prefix}/lib/pkgconfig/gpg-error.pc
+
 post-destroot {
+    if {[variant_isset universal]} {
+        move ${destroot}${prefix}/bin/${build_arch}-gpg-error-config ${destroot}${prefix}/bin/gpg-error-config.bak
+        foreach file [glob ${destroot}${prefix}/bin/*gpg-error-config] {
+            delete $file
+        }
+        move ${destroot}${prefix}/bin/gpg-error-config.bak ${destroot}${prefix}/bin/gpg-error-config
+        reinplace -E {s|[A-Za-z0-9_]+-apple-darwin|\$(arch \| sed "s/i386/x86_64/g")-apple-darwin|g} ${destroot}${prefix}/bin/gpg-error-config
+
+        move ${destroot}${prefix}/lib/pkgconfig/${build_arch}-gpg-error.pc ${destroot}${prefix}/lib/pkgconfig/gpg-error.pc.bak
+        foreach file [glob ${destroot}${prefix}/lib/pkgconfig/*gpg-error.pc] {
+            delete $file
+        }
+        move ${destroot}${prefix}/lib/pkgconfig/gpg-error.pc.bak ${destroot}${prefix}/lib/pkgconfig/gpg-error.pc
+        reinplace -E {s|^host=.*||} ${destroot}${prefix}/lib/pkgconfig/gpg-error.pc
+    }
     set docdir ${prefix}/share/doc/${name}-${version}
     xinstall -d ${destroot}${docdir}
     xinstall -m 0644 -W ${worksrcpath} ABOUT-NLS AUTHORS COPYING COPYING.LIB NEWS README \
