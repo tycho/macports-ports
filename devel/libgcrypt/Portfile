@@ -32,12 +32,19 @@ checksums       rmd160  57fca67d695ff958086becd33abfca8256efbee6 \
 depends_lib     port:libgpg-error
 
 patchfiles      patch-configure.diff \
-                patch-random-rndlinux.c.diff
+                patch-random-rndlinux.c.diff \
+                patch-noasm.diff
 
 configure.args  --disable-asm
 
 # Build fix for compilers that default to c99 (clang)
-configure.cflags-append "-std=gnu89"
+configure.cflags-delete -Os
+configure.cflags-append "-O2 -std=gnu89 -mmacosx-version-min=11.0"
+configure.args --disable-dependency-tracking \
+               --disable-silent-rules \
+               --enable-static \
+               --disable-asm \
+               --disable-jent-support \
 
 # Some versions of gcc fail to build this for i386 including:
 #     gcc-4.0 from Xcode 3.1.6 (5493) -- Note that gcc-4.0 from Xcode 2.5 (5370) works 
@@ -66,6 +73,7 @@ use_parallel_build  yes
 post-patch {
     if {[variant_exists universal] && [variant_isset universal]} {
         reinplace "s/@LIBGCRYPT_CONFIG_HOST@/${os.arch}-apple-darwin${os.major}/" ${worksrcpath}/src/libgcrypt-config.in
+        reinplace "s/^host=.*//g" ${worksrcpath}/src/libgcrypt.pc.in
     }
 }
 
