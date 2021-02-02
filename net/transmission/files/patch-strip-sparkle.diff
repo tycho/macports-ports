@@ -1,0 +1,116 @@
+diff --git Transmission.xcodeproj/project.pbxproj Transmission.xcodeproj/project.pbxproj
+index c27d235ca..8bb26f990 100644
+--- Transmission.xcodeproj/project.pbxproj
++++ Transmission.xcodeproj/project.pbxproj
+@@ -150,8 +150,6 @@
+ 		A24621410C769D0900088E81 /* trevent.h in Headers */ = {isa = PBXBuildFile; fileRef = A24621350C769CF400088E81 /* trevent.h */; };
+ 		A24621420C769D0900088E81 /* trevent.c in Sources */ = {isa = PBXBuildFile; fileRef = A24621360C769CF400088E81 /* trevent.c */; };
+ 		A247A443114C701800547DFC /* InfoViewController.h in Headers */ = {isa = PBXBuildFile; fileRef = A247A442114C701800547DFC /* InfoViewController.h */; };
+-		A24F19080A3A790800C9C145 /* Sparkle.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A24F19070A3A790800C9C145 /* Sparkle.framework */; };
+-		A24F19210A3A796800C9C145 /* Sparkle.framework in Copy Files */ = {isa = PBXBuildFile; fileRef = A24F19070A3A790800C9C145 /* Sparkle.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
+ 		A250EEB60E2ED87B00A688E6 /* web in Resources */ = {isa = PBXBuildFile; fileRef = A250EE800E2ED87B00A688E6 /* web */; };
+ 		A254853C0EB66CD4004539DA /* codelength.h in Headers */ = {isa = PBXBuildFile; fileRef = A25485390EB66CBB004539DA /* codelength.h */; };
+ 		A256588D0A9A695400E8A03B /* MessageWindowController.m in Sources */ = {isa = PBXBuildFile; fileRef = A256588B0A9A695400E8A03B /* MessageWindowController.m */; };
+@@ -461,17 +459,6 @@
+ /* End PBXContainerItemProxy section */
+ 
+ /* Begin PBXCopyFilesBuildPhase section */
+-		A24F191B0A3A792300C9C145 /* Copy Files */ = {
+-			isa = PBXCopyFilesBuildPhase;
+-			buildActionMask = 2147483647;
+-			dstPath = "";
+-			dstSubfolderSpec = 10;
+-			files = (
+-				A24F19210A3A796800C9C145 /* Sparkle.framework in Copy Files */,
+-			);
+-			name = "Copy Files";
+-			runOnlyForDeploymentPostprocessing = 0;
+-		};
+ 		A2EB2E7615C8CF1C00FBD5B4 /* CopyFiles */ = {
+ 			isa = PBXCopyFilesBuildPhase;
+ 			buildActionMask = 2147483647;
+@@ -692,7 +679,6 @@
+ 		A24621350C769CF400088E81 /* trevent.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = trevent.h; sourceTree = "<group>"; };
+ 		A24621360C769CF400088E81 /* trevent.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = trevent.c; sourceTree = "<group>"; };
+ 		A247A442114C701800547DFC /* InfoViewController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = InfoViewController.h; sourceTree = "<group>"; };
+-		A24F19070A3A790800C9C145 /* Sparkle.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = Sparkle.framework; sourceTree = "<group>"; };
+ 		A250EE800E2ED87B00A688E6 /* web */ = {isa = PBXFileReference; lastKnownFileType = folder; name = web; path = ../web; sourceTree = "<group>"; };
+ 		A25485390EB66CBB004539DA /* codelength.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = codelength.h; sourceTree = "<group>"; };
+ 		A256588A0A9A695400E8A03B /* MessageWindowController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MessageWindowController.h; sourceTree = "<group>"; };
+@@ -1054,7 +1040,6 @@
+ 				8D11072F0486CEB800E47090 /* Cocoa.framework in Frameworks */,
+ 				4D3EA0AA08AE13C600EA10C2 /* IOKit.framework in Frameworks */,
+ 				4D1838DD09DEC0E80047D688 /* libtransmission.a in Frameworks */,
+-				A24F19080A3A790800C9C145 /* Sparkle.framework in Frameworks */,
+ 				A296EF3B11E560A7004A2781 /* libiconv.dylib in Frameworks */,
+ 				A2290D2514421D1A00B95A09 /* libcrypto.dylib in Frameworks */,
+ 				A2290D2E1442B23200B95A09 /* libcurl.4.dylib in Frameworks */,
+@@ -1348,7 +1333,6 @@
+ 				A2E669780F5B8E5A00B4251A /* Security.framework */,
+ 				A22CFB810FB66EF30009BD3E /* Carbon.framework */,
+ 				A221DCC7104B3660008A642D /* Quartz.framework */,
+-				A24F19070A3A790800C9C145 /* Sparkle.framework */,
+ 			);
+ 			name = Frameworks;
+ 			sourceTree = "<group>";
+diff --git macosx/Controller.m macosx/Controller.m
+index 7087ca7a9..55308a7c9 100644
+--- macosx/Controller.m
++++ macosx/Controller.m
+@@ -25,8 +25,6 @@
+ #import <Carbon/Carbon.h>
+ #import <libkern/OSAtomic.h>
+ 
+-#import <Sparkle/Sparkle.h>
+-
+ #include <libtransmission/transmission.h>
+ #include <libtransmission/utils.h>
+ #include <libtransmission/variant.h>
+@@ -453,7 +451,6 @@ static void removeKeRangerRansomware()
+ 
+         tr_sessionSetRPCCallback(fLib, rpcCallback, (__bridge void *)(self));
+ 
+-        [[SUUpdater sharedUpdater] setDelegate: self];
+         fQuitRequested = NO;
+ 
+         fPauseOnLaunch = (GetCurrentKeyModifiers() & (optionKey | rightOptionKey)) != 0;
+@@ -4509,11 +4506,6 @@ static void removeKeRangerRansomware()
+     [[NSWorkspace sharedWorkspace] openURL: [NSURL URLWithString: DONATE_URL]];
+ }
+ 
+-- (void) updaterWillRelaunchApplication: (SUUpdater *) updater
+-{
+-    fQuitRequested = YES;
+-}
+-
+ - (void) rpcCallback: (tr_rpc_callback_type) type forTorrentStruct: (struct tr_torrent *) torrentStruct
+ {
+     @autoreleasepool
+diff --git macosx/PrefsController.m macosx/PrefsController.m
+index 5be411dd0..2d8526059 100644
+--- macosx/PrefsController.m
++++ macosx/PrefsController.m
+@@ -22,8 +22,6 @@
+ 
+ #import <Foundation/Foundation.h>
+ 
+-#import <Sparkle/Sparkle.h>
+-
+ #include <libtransmission/transmission.h>
+ #include <libtransmission/utils.h>
+ 
+@@ -125,14 +123,6 @@
+             fRPCWhitelistArray = [NSMutableArray arrayWithObject: @"127.0.0.1"];
+         [self updateRPCWhitelist];
+ 
+-        //reset old Sparkle settings from previous versions
+-        [fDefaults removeObjectForKey: @"SUScheduledCheckInterval"];
+-        if ([fDefaults objectForKey: @"CheckForUpdates"])
+-        {
+-            [[SUUpdater sharedUpdater] setAutomaticallyChecksForUpdates: [fDefaults boolForKey: @"CheckForUpdates"]];
+-            [fDefaults removeObjectForKey: @"CheckForUpdates"];
+-        }
+-
+         [self setAutoUpdateToBeta: nil];
+     }
+ 

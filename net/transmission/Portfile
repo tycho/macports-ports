@@ -31,6 +31,7 @@ checksums       rmd160  5286c3e183474cba6ed1c6cfc022f4f5afab4fda \
 
 patchfiles      patch-sparkle.diff \
                 patch-disable-sparkle-menu.diff \
+                patch-strip-sparkle.diff \
                 patch-xcodebuild.diff
 
 platforms       macosx
