@@ -45,12 +45,10 @@ if {${subport} eq ${name}} {
     conflicts       lib${name}
 }
 
-# VLC-2.1 and later are x86_64-only: https://trac.videolan.org/vlc/ticket/8161
-universal_variant   no
-supported_archs     x86_64
+supported_archs     x86_64 arm64
 
-version             3.0.11
-revision            3
+version             3.0.12
+revision            0
 license             GPL-2
 
 platforms           darwin
@@ -60,9 +58,9 @@ dist_subdir         VLC
 distname            vlc-${version}
 use_xz              yes
 
-checksums           rmd160  a9c6a8796d0d86a71b738d4d41c377cd03d0e4ce \
-                    sha256  3e94a1acf33445e9da15d528aa48657aa26b912eaa2656b403d43860a8834919 \
-                    size    26041744
+checksums           rmd160  5975ce21a183893ae2541ac38d5131329e539fbd \
+                    sha256  eff458f38a92126094f44f2263c2bf2c7cdef271b48192d0fe7b1726388cf879 \
+                    size    25997468
 
 depends_build       port:pkgconfig \
                     port:realpath
@@ -136,13 +134,6 @@ depends_lib-append  path:lib/libavcodec.diff:ffmpeg \
 depends_run-append  port:libaacs \
                     port:libbdplus
 
-# make libVLC2 and libVLC(3) co-installable.
-set vlcprefix       ${prefix}/libexec/vlc3
-configure.pre_args-replace \
-                    --prefix=${prefix} \
-                    --prefix=${vlcprefix}
-configure.args-append \
-                    --bindir=${prefix}/bin
 platform darwin {
     # VLC calls ibtools which isn't part of the commandline tools
     use_xcode yes
@@ -228,7 +219,7 @@ if {${subport} ne "lib${name}"} {
     # The VLC.app target does not obey DESTDIR and tries to copy a
     # non-existing folder.
     destroot.destdir \
-                    prefix=${destroot}${vlcprefix}
+                    prefix=${destroot}${prefix}
     destroot.target VLC.app
     # Don't try to install the (missing) shared/hrtfs folder.
     # That folder is only used by the spatialaudio plugin which
@@ -440,7 +431,7 @@ platform darwin {
     }
 
     post-destroot {
-        file delete {*}[glob ${destroot}${vlcprefix}/lib/vlc/plugins/*/*.la]
+        file delete {*}[glob ${destroot}${prefix}/lib/vlc/plugins/*/*.la]
 
         if {[variant_isset quartz]} {
             if {${subport} ne "lib${name}"} {
@@ -459,17 +450,17 @@ platform darwin {
 
                 # http://trac.macports.org/ticket/35131
                 xinstall -m 755 -d ${destroot}${applications_dir}/VLC.app/Contents/MacOS/lib
-                foreach l [glob -nocomplain ${destroot}${vlcprefix}/lib/*] {
-                    ln -s ${vlcprefix}/lib/[file tail ${l}] ${destroot}${applications_dir}/VLC.app/Contents/MacOS/lib
+                foreach l [glob -nocomplain ${destroot}${prefix}/lib/*] {
+                    ln -s ${prefix}/lib/[file tail ${l}] ${destroot}${applications_dir}/VLC.app/Contents/MacOS/lib
                 }
-                ln -s ${vlcprefix}/lib/vlc/plugins ${destroot}${applications_dir}/VLC.app/Contents/MacOS/plugins
-                ln -s ${vlcprefix}/lib/vlc/lua ${destroot}${applications_dir}/VLC.app/Contents/MacOS/share/lua
-                foreach d [glob -nocomplain ${destroot}${vlcprefix}/share/locale/*] {
+                ln -s ${prefix}/lib/vlc/plugins ${destroot}${applications_dir}/VLC.app/Contents/MacOS/plugins
+                ln -s ${prefix}/lib/vlc/lua ${destroot}${applications_dir}/VLC.app/Contents/MacOS/share/lua
+                foreach d [glob -nocomplain ${destroot}${prefix}/share/locale/*] {
                     set locale [file tail ${d}]
                     set ldir ${destroot}${applications_dir}/VLC.app/Contents/MacOS/share/locale/${locale}/LC_MESSAGES
                     xinstall -m 755 -d ${ldir}
                     foreach m [glob -nocomplain ${d}/LC_MESSAGES/*] {
-                        ln -s ${vlcprefix}/share/locale/${locale}/LC_MESSAGES/[file tail ${m}] ${ldir}/
+                        ln -s ${prefix}/share/locale/${locale}/LC_MESSAGES/[file tail ${m}] ${ldir}/
                     }
                 }
 
@@ -480,16 +471,16 @@ platform darwin {
                 system "chmod 755 ${destroot}${prefix}/bin/vlc"
             } else {
                 delete ${destroot}${prefix}/bin
-                delete ${destroot}${vlcprefix}/share/applications
-                delete ${destroot}${vlcprefix}/share/man
+                delete ${destroot}${prefix}/share/applications
+                delete ${destroot}${prefix}/share/man
             }
         }
-        reinplace "s|prefix=${prefix}|prefix=${vlcprefix}|g" \
-                ${destroot}${vlcprefix}/lib/pkgconfig/libvlc.pc \
-                ${destroot}${vlcprefix}/lib/pkgconfig/vlc-plugin.pc
+        reinplace "s|prefix=${prefix}|prefix=${prefix}|g" \
+                ${destroot}${prefix}/lib/pkgconfig/libvlc.pc \
+                ${destroot}${prefix}/lib/pkgconfig/vlc-plugin.pc
     }
     post-activate {
-        system "${vlcprefix}/lib/vlc/vlc-cache-gen ${vlcprefix}/lib/vlc"
+        system "${prefix}/lib/vlc/vlc-cache-gen ${prefix}/lib/vlc"
     }
 }
 notes-append "MIDI support requires installing one or more SoundFont files,\
