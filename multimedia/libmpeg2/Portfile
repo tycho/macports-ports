@@ -24,6 +24,9 @@ checksums           rmd160  00b2d669655ed3f7a176f5eecc925045159a0301 \
 
 patchfiles          universal.patch patch-arm64.diff
 
+use_autoreconf      yes
+autoreconf.args     -fis
+
 configure.args      --enable-shared \
                     --disable-sdl \
                     --without-x \
