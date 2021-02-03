@@ -287,12 +287,6 @@ platform darwin {
         } else {
             reinplace -W "${worksrcpath}/TOOLS" "/@@HWDEC_CUDA@@/d" config-maintainer
         }
-
-        if {${os.major} < 11 || [lsearch -exact [list x86_64 arm64] ${configure.build_arch}] == -1} {
-            reinplace -W "${worksrcpath}/TOOLS" "s/@@BACKEND@@/x11/" config-maintainer
-        } else {
-            reinplace -W "${worksrcpath}/TOOLS" "s/@@BACKEND@@/cocoa/" config-maintainer
-        }
     }
 }
 
