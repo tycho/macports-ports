@@ -1,0 +1,41 @@
+diff --git orc/orccodemem.c orc/orccodemem.c
+index 0f09749..ad87931 100644
+--- orc/orccodemem.c
++++ orc/orccodemem.c
+@@ -5,9 +5,7 @@
+ #include <string.h>
+ #include <stdlib.h>
+ 
+-#ifdef HAVE_UNISTD_H
+ #include <unistd.h>
+-#endif
+ #include <sys/types.h>
+ #include <sys/stat.h>
+ #include <fcntl.h>
+diff --git examples/volscale.c examples/volscale.c
+index b08da0c..86f59c7 100644
+--- examples/volscale.c
++++ examples/volscale.c
+@@ -1,8 +1,6 @@
+ 
+ #include <stdio.h>
+-#ifndef _MSC_VER
+ #include <sys/time.h>
+-#endif
+ 
+ #define ORC_ENABLE_UNSTABLE_API
+ 
+diff --git orc-test/orcprofile.c orc-test/orcprofile.c
+index c4e4f5b..e2bb6b8 100644
+--- orc-test/orcprofile.c
++++ orc-test/orcprofile.c
+@@ -32,9 +32,7 @@
+ #include <orc-test/orcprofile.h>
+ #include <orc/orcdebug.h>
+ 
+-#ifdef HAVE_SYS_TIME_H
+ #include <sys/time.h>
+-#endif
+ #include <time.h>
+ #include <string.h>
+ #include <math.h>
