@@ -23,6 +23,8 @@ depends_build       port:libtool
 
 use_configure no
 
+variant universal {}
+
 build.args          VERBOSE=1 \
                     CC="${configure.cc} [get_canonical_archflags]" \
                     config=release \
