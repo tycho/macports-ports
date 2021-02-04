@@ -1,0 +1,13 @@
+diff --git configure.ac configure.ac
+index 35517c4a2..6d591c359 100644
+--- configure.ac
++++ configure.ac
+@@ -460,7 +460,7 @@ case "$host" in
+            OBJCXXFLAGS="$OBJCXXFLAGS -std=gnu++11";
+        fi
+        AC_DEFINE(MACOSX, 1, [Compiling on Mac OS X])
+-       LIBS="$LIBS -framework Carbon -framework CoreFoundation -framework CoreMIDI -framework AudioUnit -framework AudioToolbox -framework ApplicationServices -framework AppKit"
++       LIBS="$LIBS -framework Carbon -framework CoreFoundation -framework CoreMIDI -framework AudioUnit -framework AudioToolbox -framework ApplicationServices -framework AppKit -framework IOKit"
+        dnl FEATURE: Whether to support direct serial port passthrough
+        AC_DEFINE(C_DIRECTSERIAL, 1, [ Define to 1 if you want serial passthrough support (Win32, Posix and OS/2).])
+        ;;

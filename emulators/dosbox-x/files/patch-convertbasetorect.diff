@@ -1,12 +1,8 @@
-kencu@macports.org
-work around no convertRectToScreen on < 10.7
-
-Of note, it looks a lot like the new convertPointToScreen is just the old convertBaseToScreen
-in new clothes... what goes around comes around, I guess
-
---- src/gui/menu_osx.mm.orig    2020-09-02 12:14:28.000000000 -0700
-+++ src/gui/menu_osx.mm 2020-09-02 12:16:38.000000000 -0700
-@@ -511,7 +511,16 @@
+diff --git src/gui/menu_osx.mm src/gui/menu_osx.mm
+index 985245b99..cbdb75ce3 100644
+--- src/gui/menu_osx.mm
++++ src/gui/menu_osx.mm
+@@ -515,7 +515,16 @@ int my_quartz_match_window_to_monitor(CGDirectDisplayID *new_id,NSWindow *wnd) {
  // NTS: This did not appear until Mojave, and some followers on Github prefer to compile for somewhat older versions of OS X
  //      NSPoint pt = [wnd convertPointToScreen:NSMakePoint(rct.size.width / 2, rct.size.height / 2)];
  // NTS: convertRectToScreen however is documented to exist since 10.7, unless Apple got that wrong too...

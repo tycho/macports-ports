@@ -5,13 +5,14 @@ PortGroup           github 1.0
 PortGroup           legacysupport 1.0
 PortGroup           app 1.0
 PortGroup           compiler_blacklist_versions 1.0
+PortGroup           muniversal 1.0
 
-github.setup        joncampbell123 dosbox-x 0.83.7 dosbox-x-v
+github.setup        joncampbell123 dosbox-x 0.83.10 dosbox-x-v
 revision            0
 
-checksums           rmd160  cd4edafe72c77e00166151c1fcc7d2e772d99db7 \
-                    sha256  9cdfa3267c340a869255d8eb1c4ebf4adde47c22854e1d013da22190350bfbb3 \
-                    size    47403831
+checksums           rmd160  b3ef0f67e2360aefb5ed07b5bb29330d6c044442 \
+                    sha256  d8ce1a686c93d190bc228689450d50f956fe8064c9b72dbf5e5da566c2a347b2 \
+                    size    48741723
 
 categories          emulators
 platforms           darwin
@@ -33,9 +34,11 @@ github.tarball_from archive
 patchfiles          patch-futimens.diff \
                     patch-mactypes.diff \
                     patch-convertbasetorect.diff \
-                    patch-menu-osx-cgpointfix.diff
+                    patch-menu-osx-cgpointfix.diff \
+                    patch-unbreak-fpu-header-guard.diff \
+                    patch-missing-iokit.diff
 
-supported_archs     i386 x86_64
+supported_archs     x86_64 arm64
 
 # build also looks for nasm, but doesn't use it even if it is found
 depends_build-append \
@@ -61,6 +64,14 @@ compiler.blacklist-append {clang < 900}
 
 compiler.cxx_standard 2011
 configure.cxxflags-append -Wno-unknown-warning-option
+
+if {![info exists universal_possible]} {
+    set universal_possible [expr {${os.universal_supported} && [llength ${configure.universal_archs}] >= 2}]
+}
+if {${universal_possible} && [variant_isset universal]} {
+    set merger_configure_objcxxflags(arm64) "-arch arm64"
+    set merger_configure_objcxxflags(x86_64) "-arch x86_64"
+}
 
 post-destroot {
     xinstall -m 755 -d ${destroot}${prefix}/share/doc/${name}
