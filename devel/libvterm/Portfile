@@ -36,6 +36,8 @@ patchfiles-append   patch-disable-silent-rules.diff
 
 use_configure no
 
+variant universal {}
+
 build.args          PREFIX=${prefix}
 build.env-append    CC=${configure.cc} \
                     "CFLAGS=${configure.cflags} [get_canonical_archflags cc]" \
