@@ -1,12 +1,16 @@
 # -*- coding: utf-8; mode: tcl; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*- vim: fenc=utf-8:ft=tcl:et:sw=4:ts=4:sts=4
 
 PortSystem          1.0
+PortGroup           github 1.0
 PortGroup           compiler_blacklist_versions 1.0
 PortGroup           xcode_workaround 1.0
+PortGroup           muniversal 1.0
+
+github.setup        LuaJIT LuaJIT ec6edc5c39c25e4eb3fca51b753f9995e97215da
 
 name                luajit
 version             2.1.0-beta3
-revision            1
+revision            2
 categories          lang
 platforms           darwin
 license             BSD
@@ -17,13 +21,10 @@ description         a Just-In-Time Compiler for Lua
 long_description    LuaJIT is a Just-In-Time Compiler for the Lua programming language.
 
 homepage            http://luajit.org
-master_sites        ${homepage}/download
 
-distname            LuaJIT-${version}
-
-checksums           rmd160  5f41b0b6e3bfe1f1e033f7464171d474ca497235 \
-                    sha256  1ad2e34b111c802f9d0cdf019e986909123237a28c746b21295b63c9e785d9c3 \
-                    size    1025180
+checksums           rmd160  7993e44383c1f414d833633e877f3eaa82a94153 \
+                    sha256  a0c775876e513b24ad27464942feeb28da568511fb6701431f21cfaf91bc8ca5 \
+                    size    1036603
 
 post-patch {
     reinplace "s|/usr/local|${prefix}|" ${worksrcpath}/etc/luajit.pc
@@ -38,10 +39,21 @@ xcode_workaround.type append_to_compiler_flags
 
 build.target        amalg
 build.args-append   CC="${configure.cc}" \
-                    CFLAGS="${configure.cppflags} ${configure.cflags} [get_canonical_archflags] -DLUAJIT_ENABLE_LUA52COMPAT" \
-                    LDFLAGS="${configure.ldflags} [get_canonical_archflags]" \
                     PREFIX="${prefix}" \
                     Q=""
+
+if {![info exists universal_possible]} {
+    set universal_possible [expr {${os.universal_supported} && [llength ${configure.universal_archs}] >= 2}]
+}
+if {!${universal_possible} || ![variant_isset universal]} {
+    build.args-append       CFLAGS="${configure.cppflags} ${configure.cflags} [get_canonical_archflags] -DLUAJIT_ENABLE_LUA52COMPAT" \
+                            LDFLAGS="${configure.ldflags} [get_canonical_archflags]"
+} else {
+    foreach arch ${configure.universal_archs} {
+        lappend merger_build_args(${arch})      CFLAGS="${configure.cppflags} ${configure.cflags} -arch ${arch} -DLUAJIT_ENABLE_LUA52COMPAT" \
+                                                LDFLAGS="${configure.ldflags} -arch ${arch}"
+    }
+}
 
 destroot.args-append \
                     PREFIX="${prefix}"
