@@ -8,7 +8,7 @@ PortGroup           compiler_blacklist_versions 1.0
 PortGroup           muniversal 1.0
 
 github.setup        joncampbell123 dosbox-x 0.83.10 dosbox-x-v
-revision            0
+revision            1
 
 checksums           rmd160  b3ef0f67e2360aefb5ed07b5bb29330d6c044442 \
                     sha256  d8ce1a686c93d190bc228689450d50f956fe8064c9b72dbf5e5da566c2a347b2 \
@@ -36,7 +36,8 @@ patchfiles          patch-futimens.diff \
                     patch-convertbasetorect.diff \
                     patch-menu-osx-cgpointfix.diff \
                     patch-unbreak-fpu-header-guard.diff \
-                    patch-missing-iokit.diff
+                    patch-missing-iokit.diff \
+                    patch-enable-mt32-on-arm64.diff
 
 supported_archs     x86_64 arm64
 

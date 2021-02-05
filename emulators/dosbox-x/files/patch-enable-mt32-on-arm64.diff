@@ -1,0 +1,13 @@
+diff --git configure.ac configure.ac
+index 6d591c359..4e70b20d3 100644
+--- configure.ac
++++ configure.ac
+@@ -751,7 +751,7 @@ AC_MSG_CHECKING(whether MT32 emulation will be enabled)
+ # test
+ if test x$enable_mt32 = xyes ; then 
+   case "$host_cpu" in
+-    x86_64 | amd64)
++    x86_64 | amd64 | aarch64)
+       AC_MSG_RESULT(yes)
+       AC_DEFINE(C_MT32,1)
+       ;;
